@@ -93,13 +93,40 @@ head(phenotype_data)
 
 names(phenotype_data)
 
-# dataset name to save as/use
+##
+## dataset name to save as/use
+##
+
 dataset="E_TABM_940"
 
-#probe detection thresohld to use
-Probe_Detection_Threshold=0.9
+##
+## disease
+##
 
-# expression chip to use 
+disease="ALS"
+
+##
+## Affymetrix or Illumina
+##
+
+Microarray_platform="Affymetrix"
+
+##
+## Raw or pre-processed
+##
+
+Data_format="Raw"
+
+##
+## probe detection thresohld to use
+##
+
+Probe_Detection_Threshold=0.4
+
+##
+## expression chip to use 
+##
+
 expression_chip="hgu133plus2"
 #expression_chip="hgu133a"
 #expression_chip="hgu133b"
@@ -107,18 +134,15 @@ expression_chip="hgu133plus2"
 #expression_chip="illuminaHumanv4"
 #expression_chip="illuminaHumanv3"
 
-# sample network threshold to use - samples less than Z.K threshold will be removed - need manual check
-sample_network_ZK_threshold="-3"
+##
+## sample network threshold to use - samples less than Z.K threshold will be removed - need manual check
+##
 
-# extract gender information
-Gender<-phenotype_data[7]
-colnames(Gender)<-"Gender"
+sample_network_ZK_threshold=-3
 
-#extract diagnosis information
-Diagnosis<-phenotype_data[13]
-colnames(Diagnosis)<-"Diagnosis"
-
-# massi R chip to use
+##
+## massi R chip to use
+##
 
 #massi_R_chip="illumina_humanwg_6_v1" 
 #massi_R_chip="illumina_humanwg_6_v2" 
@@ -127,11 +151,24 @@ colnames(Diagnosis)<-"Diagnosis"
 #massi_R_chip="affy_hugene_1_0_st_v1" 
 massi_R_chip="affy_hg_u133_plus_2"  
 
-#Ethnicity<-phenotype_data[30]
-#Tissue<-phenotype_data[10]
-#Age<-phenotype_data[2]
+##
+## Phenotype info
+##
 
-# set 
+Ethnicity<-phenotype_data[30]
+colnames(Ethnicity)<-"Ethnicity"
+
+Tissue<-phenotype_data[10]
+colnames(Tissue)<-"Tissue"
+
+Age<-phenotype_data[2]
+colnames(Age)<-"Age"
+
+Diagnosis<-phenotype_data[13]
+colnames(Diagnosis)<-"Diagnosis"
+
+Gender<-phenotype_data[7]
+colnames(Gender)<-"Gender"
 
 #standardise gender - male, female, unknown
 
@@ -145,6 +182,10 @@ Diagnosis[Diagnosis=="ALS",]<-"case"
 Diagnosis[Diagnosis=="non diseased",]<-"control"
 
 table(Diagnosis)
+
+#standardise age - full numeric numbers
+
+table(Age)
 
 ##### PLOTS OF RAW DATA ####
 
@@ -353,11 +394,11 @@ XIST_probe_ID
 PRKY_probe_ID<-subset(Gene_symbols, symbol=="PRKY")
 PRKY_probe_ID
 
-NLGN4Y_probe_ID<-subset(Gene_symbols, symbol=="NLGN4Y")
-NLGN4Y_probe_ID
+RPS4Y1_probe_ID<-subset(Gene_symbols, symbol=="RPS4Y1")
+RPS4Y1_probe_ID
 
-TMSB4Y_probe_ID<-subset(Gene_symbols, symbol=="TMSB4Y")
-TMSB4Y_probe_ID
+KDM5D_probe_ID<-subset(Gene_symbols, symbol=="KDM5D")
+KDM5D_probe_ID
 
 USP9Y_probe_ID<-subset(Gene_symbols, symbol=="USP9Y")
 USP9Y_probe_ID
@@ -368,8 +409,8 @@ UTY_probe_ID
 # merge all genes 
 gene_list<-rbind(XIST_probe_ID,
                  PRKY_probe_ID,
-                 NLGN4Y_probe_ID,
-                 TMSB4Y_probe_ID,
+                 RPS4Y1_probe_ID,
+                 KDM5D_probe_ID,
                  USP9Y_probe_ID,
                  UTY_probe_ID)
 
@@ -416,8 +457,6 @@ dev.off()
 
 ##### PCA ####
 
-*** CONTINUE HERE *****
-
 # calculate pca
 
 pca<-prcomp(data_exprs_good_probes)
@@ -440,31 +479,26 @@ plot(pca_importance_var_exp, ylab="PCA Proportion of Variance Explained", type="
 #plot variance explained cumalative
 plot(pca_importance_var_exp_cum, ylab="PCA Cumulative Proportion of Variance Explained", ylim=c(0,1.1),type="b",col="blue");abline(h=0.90);abline(h=1.00)
 
-par(dev.off)
 dev.off()
 
 # pca matrix plot
 
 #color
 
-# phenotyp and sample iD
-Diagnosis_lookup<-phenotype_data[3]
-colnames(Diagnosis_lookup)<-"Diagnosis"
-Diagnosis_lookup
-
 # order of samples in expression data
 Diagnosis_temp<-colnames(data_exprs_good_probes)
 Diagnosis_temp
 
 # match order
-Diagnosis_pca<-Diagnosis_lookup[match(Diagnosis_temp, rownames(Diagnosis_lookup)),]
+Diagnosis_pca<-Diagnosis[match(Diagnosis_temp, rownames(Diagnosis)),]
+Diagnosis_pca
 
 # assign color to group
 Diagnosis_pca_color<-labels2colors(as.character(Diagnosis_pca))
 
 # pca plot
 plot(pca$rotation[,1:2], main=" PCA plot coloured by chip before QC",col="black", pch=21,bg=Diagnosis_pca_color)
-legend('bottomleft', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
+legend('bottomright', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
 
 #plot to pdf
 
@@ -477,7 +511,7 @@ plot(pca_importance_var_exp, ylab="PCA Proportion of Variance Explained", type="
 plot(pca_importance_var_exp_cum, ylab="PCA Cumulative Proportion of Variance Explained", ylim=c(0,1.1),type="b",col="blue");abline(h=0.90);abline(h=1.00)
 # pca plot
 plot(pca$rotation[,1:2], main=" PCA plot coloured by Disease status before QC ",col="black", pch=21,bg=Diagnosis_pca_color)
-legend('bottomleft', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
+legend('bottomright', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
 dev.off()
 
 setwd(work_dir)
@@ -489,8 +523,8 @@ setwd(work_dir)
 dim(data_case_exprs_good_probes)
 dim(data_control_exprs_good_probes)
 
-data_case_exprs_good_probes<-cbind(Diagnosis ="AD", as.data.frame(t(data_case_exprs_good_probes)))
-data_control_exprs_good_probes<-cbind(Diagnosis = "CONTROL", as.data.frame(t(data_control_exprs_good_probes)))
+data_case_exprs_good_probes<-cbind(Diagnosis ="case", as.data.frame(t(data_case_exprs_good_probes)))
+data_control_exprs_good_probes<-cbind(Diagnosis = "control", as.data.frame(t(data_control_exprs_good_probes)))
 
 head(data_case_exprs_good_probes)[1:5]
 head(data_control_exprs_good_probes)[1:5]
@@ -501,14 +535,14 @@ any(colnames(data_case_exprs_good_probes)==colnames(data_control_exprs_good_prob
 
 # merge case control in to one dataset per data region
 
-Hippocampus_good_probes<-rbind(data_case_exprs_good_probes, data_control_exprs_good_probes)
-head(Hippocampus_good_probes)[1:5]
+data_exprs_good_probes_diagnosis<-rbind(data_case_exprs_good_probes, data_control_exprs_good_probes)
+head(data_exprs_good_probes_diagnosis)[1:5]
 
 # add Predicted gender in 
-Hippocampus_good_probes<-merge(gender_comparison[2], Hippocampus_good_probes, by="row.names")
-rownames(Hippocampus_good_probes)<-Hippocampus_good_probes$Row.names
-Hippocampus_good_probes$Row.names<-NULL
-head(Hippocampus_good_probes)[1:5]
+data_exprs_good_probes_diagnosis<-merge(gender_comparison[2], data_exprs_good_probes_diagnosis, by="row.names")
+rownames(data_exprs_good_probes_diagnosis)<-data_exprs_good_probes_diagnosis$Row.names
+data_exprs_good_probes_diagnosis$Row.names<-NULL
+head(data_exprs_good_probes_diagnosis)[1:5]
 
 # create sva function
 
@@ -521,16 +555,71 @@ check_SV_in_data<-function(dataset){
   #full model matrix for Diagnosis
   mod = model.matrix(~Diagnosis+Predicted_Gender, data=dataset_pheno)
   # check number of SV in data
-  num.sv(dataset_exprs, mod, method="leek")
+  print(num.sv(dataset_exprs, mod, method="leek"))
 }
 
 # check sv
 
-check_SV_in_data(Hippocampus_good_probes)
+number_of_SV<-check_SV_in_data(data_exprs_good_probes_diagnosis)
 
-# no SV - no adjustment
+# creat function to sva adjust
+
+# create function to adjust for SVA and adjust if needed
+
+if (number_of_SV>0){
+  adjust_for_sva<-function(dataset){
+    # create sva compatable matrix - sample in columns, probes in rows - pheno info seperate - sort by diagnosis 1st to keep AD top
+    sorted_by_diagnosis<-dataset[order(dataset$Diagnosis),]
+    # separate expresion and pheno
+    dataset_sva_pheno<-sorted_by_diagnosis[c(1,2)]
+    dataset_sva_exprs<-t(sorted_by_diagnosis[3:dim(sorted_by_diagnosis)[2]])
+    #full model matrix for Diagnosis
+    mod = model.matrix(~Diagnosis+Clinical_Gender, data=dataset_sva_pheno)
+    mod0 = model.matrix(~1, data=dataset_sva_pheno)
+    # number of SV
+    num.sv(dataset_sva_exprs, mod, method="leek")
+    n.sv=num.sv(dataset_sva_exprs, mod, method="leek")
+    # exit if n.sv=0
+    if(n.sv==0){stop("No Significant Variable found, exiting....")}
+    # apply sva - removed n.sv
+    svobj = sva(dataset_sva_exprs, mod, mod0, n.sv=n.sv, method="two-step")
+    # adjust for sva
+    X = cbind(mod, svobj$sv)
+    Hat = solve(t(X) %*% X) %*% t(X)
+    beta = (Hat %*% t(dataset_sva_exprs))
+    P = ncol(mod)
+    clean_data<-dataset_sva_exprs - t(as.matrix(X[,-c(1:P)]) %*% beta[-c(1:P),])
+    # merge clean data with pheno
+    clean_data_with_pheno<-merge(dataset_sva_pheno, as.data.frame(t(clean_data)), by="row.names")
+    rownames(clean_data_with_pheno)<-clean_data_with_pheno$Row.names
+    clean_data_with_pheno$Row.names<-NULL
+    # check SVA on adjusted data
+    cat("\n")
+    cat("number of surrogate variables after adjustment:")
+    cat("\n")
+    print(num.sv(clean_data, mod, method="leek"))
+    # return clean data with pheno
+    return(clean_data_with_pheno)
+  }
+  data_exprs_good_probes_diagnosis_sva<-adjust_for_sva(data_exprs_good_probes_diagnosis)
+  check_SV_in_data(data_exprs_good_probes_diagnosis_sva)
+}  else {
+    data_exprs_good_probes_diagnosis_sva<-data_exprs_good_probes_diagnosis
+  check_SV_in_data(data_exprs_good_probes_diagnosis_sva)
+}
+
+check_SV_in_data(data_exprs_good_probes_diagnosis_sva)
 
 ##### SAMPLE NETWORK PLOT #####
+
+# separate dataframe into case and control
+data_exprs_good_probes_diagnosis_sva_case<-data_exprs_good_probes_diagnosis_sva[data_exprs_good_probes_diagnosis_sva$Diagnosis=="case",]
+
+data_exprs_good_probes_diagnosis_sva_control<-data_exprs_good_probes_diagnosis_sva[data_exprs_good_probes_diagnosis_sva$Diagnosis=="control",]
+
+#remove gender column
+data_exprs_good_probes_diagnosis_sva_case$Predicted_Gender<-NULL
+data_exprs_good_probes_diagnosis_sva_control$Predicted_Gender<-NULL
 
 # sample plot function - taken from steve expression pipeline
 
@@ -626,9 +715,9 @@ names_of_outliers<-function(dataset, threshold){
 run_sample_network_plot<-function(dataset, threshold){
   #sample network plot
   sampleNetwork_plot(dataset)
-  #identify sample below Z.K -2  
+  #identify sample below Z.K threshold
   dataset_removal_1<-names_of_outliers(dataset, threshold)
-  #remove samples with ZK below -2
+  #remove samples with ZK below threshold
   dataset_QC<-dataset[!(rownames(dataset)%in%dataset_removal_1),]
   #sample network plot
   sampleNetwork_plot(dataset_QC)
@@ -638,7 +727,7 @@ run_sample_network_plot<-function(dataset, threshold){
   while (length(dataset_removal_1)>0) {
     # remove bad samples - 1st iteration removes none
     dataset_QC<-dataset_QC[!(rownames(dataset_QC)%in%dataset_removal_1),]
-    #identify sample below Z.K -2  
+    #identify sample below Z.K threshold
     dataset_removal_1<-names_of_outliers(dataset_QC, threshold)
     #record samples removed
     count<-c(count, dataset_removal_1)
@@ -654,19 +743,19 @@ run_sample_network_plot<-function(dataset, threshold){
 
 # run sample network on entorhinal Cortex - on dataframe without gender
 
-data_case_exprs_good_probes_QC<-run_sample_network_plot(data_case_exprs_good_probes, -3)
-data_control_exprs_good_probes_QC<-run_sample_network_plot(data_control_exprs_good_probes, -3)
+data_case_exprs_good_probes_QC<-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_case, sample_network_ZK_threshold)
+data_control_exprs_good_probes_QC<-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, sample_network_ZK_threshold)
 
 ##### PLOT SAMPLE NETWORK ANALYSIS TO PDF #####
 
 setwd(sample_network_dir)
 
 pdf("case_sample_network_analysis.pdf")
-data_case_exprs_good_probes_QC<-run_sample_network_plot(data_case_exprs_good_probes, -3)
+run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_case, sample_network_ZK_threshold)
 dev.off()
 
 pdf("control_sample_network_analysis.pdf")
-data_control_exprs_good_probes_QC<-run_sample_network_plot(data_control_exprs_good_probes, -3)
+run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, sample_network_ZK_threshold)
 dev.off()
 
 ##### CREATE QC'd DATASET #####
@@ -696,7 +785,7 @@ Diagnosis_pca_color_QCd<-labels2colors(as.character(expression_data_QCd$Diagnosi
 
 # pca plot - color by disease - case/control
 plot(pca_QCd$rotation[,1:2], main=" PCA plot coloured by Disease Status after QC",col="black", pch=21,bg=Diagnosis_pca_color_QCd)
-legend('topright', as.character(unique(expression_data_QCd$Diagnosis)), fill=unique(Diagnosis_pca_color_QCd))
+legend('bottomright', as.character(unique(expression_data_QCd$Diagnosis)), fill=unique(Diagnosis_pca_color_QCd))
 
 #plot to pdf
 
@@ -704,30 +793,30 @@ setwd(pca_dir)
 
 pdf("pca_plot_before_and_after_QC.pdf")
 plot(pca$rotation[,1:2], main=" PCA plot coloured by chip before QC",col="black", pch=21,bg=Diagnosis_pca_color)
-legend('bottomleft', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
+legend('bottomright', unique(Diagnosis_pca), fill=unique(Diagnosis_pca_color))
 plot(pca_QCd$rotation[,1:2], main=" PCA plot coloured by Disease Status after QC",col="black", pch=21,bg=Diagnosis_pca_color_QCd)
-legend('bottomleft', as.character(unique(expression_data_QCd$Diagnosis)), fill=unique(Diagnosis_pca_color_QCd))
+legend('bottomright', as.character(unique(expression_data_QCd$Diagnosis)), fill=unique(Diagnosis_pca_color_QCd))
 dev.off()
 
 ##### CONVERT PROBE ID TO ENTREZ ID #####
 
 # Get the probe identifiers that are mapped to an ENTREZ Gene ID using hgu133a.db
-mapped_probes <- mappedkeys(hgu133aENTREZID)
+mapped_probes <- mappedkeys(eval(parse(text = paste(expression_chip, "ENTREZID", sep=""))))
 
 # Convert to a list
-hgu133a.db_mapping <- as.data.frame(hgu133aENTREZID[mapped_probes])
+probe_entrez_mapping <- as.data.frame(eval(parse(text = paste(expression_chip, "ENTREZID", sep="")))[mapped_probes])
 # arrange order of column by entrezgene probe_id
-hgu133a.db_mapping<-hgu133a.db_mapping[c(2,1)]
-colnames(hgu133a.db_mapping)[1]<-"entrezgene"
+probe_entrez_mapping<-probe_entrez_mapping[c(2,1)]
+colnames(probe_entrez_mapping)[1]<-"entrezgene"
 
-head(hgu133a.db_mapping)
-dim(hgu133a.db_mapping)
+head(probe_entrez_mapping)
+dim(probe_entrez_mapping)
 
 #check any duplicated probe IDs
-anyDuplicated(hgu133a.db_mapping$probe_id)
+anyDuplicated(probe_entrez_mapping$probe_id)
 
 #check any dupliacted entrezgene IDs
-anyDuplicated(hgu133a.db_mapping$entrezgene)
+anyDuplicated(probe_entrez_mapping$entrezgene)
 
 # create convert_probe_id_to_entrez_id function 
 
@@ -741,9 +830,9 @@ convert_probe_id_to_entrez_id <- function(expression_dataset, probe_mapping_file
   return(data_frame_in_probe_mapper)
 }
 
-# using hgu133a
+# using probe_entrez_mapping file
 
-expression_data_QCd_entrez_id<-convert_probe_id_to_entrez_id(expression_data_QCd[2:dim(expression_data_QCd)[2]], hgu133a.db_mapping)
+expression_data_QCd_entrez_id<-convert_probe_id_to_entrez_id(expression_data_QCd[2:dim(expression_data_QCd)[2]], probe_entrez_mapping)
 dim(expression_data_QCd)
 dim(expression_data_QCd_entrez_id)
 length(which(duplicated(colnames(expression_data_QCd_entrez_id))))
@@ -786,79 +875,24 @@ head(expression_data_QCd_entrez_id_unique[1:5])
 
 ##### ATTACH DIAGNOSIS AND data REGION #####
 
-# standardise to 
-#"Tissue", "Clinical_Gender", "Predicted_Gender", "Diagnosis", "BRAAK", "APOE", "Age", "MMSE", "Diagnosis_sub_cat"
+# create function to merge multiple dataframes
 
-# Diagnosis
+MyMerge       <- function(x, y){
+  df            <- merge(x, y, by= "row.names", all.x= F, all.y= F)
+  rownames(df)  <- df$Row.names
+  df$Row.names  <- NULL
+  return(df)
+}
 
-head(phenotype_data)
-names(phenotype_data)
+# create phenotype infor to attach - diagnosis + gender + Age + Ethnicity + Tissue
+phenotype_to_attach<-Reduce(MyMerge, list(Diagnosis, gender_comparison, Age, Ethnicity, Tissue))
 
-Diagnosis
-
-phenotype_to_attach<-phenotype_data[21]
-colnames(phenotype_to_attach)<-"Diagnosis"
-
-# Tissue
-rownames(phenotype_to_attach)==rownames(phenotype_data)
-phenotype_to_attach$Tissue<-"Hippocampus"
-
+dim(phenotype_to_attach)
 head(phenotype_to_attach)
 
-# Age, MMSE, BRRAAK, APOE
-
-phenotype_to_attach$MMSE<-"Unknown"
-phenotype_to_attach$Age<-"Unknown"
-phenotype_to_attach$BRAAK<-"Unknown"
-phenotype_to_attach$APOE<-"Unknown"
-
-# Gender
-
-phenotype_to_attach<-merge(phenotype_to_attach, gender_comparison, by="row.names")
-rownames(phenotype_to_attach)<-phenotype_to_attach$Row.names
-phenotype_to_attach$Row.names<-NULL
-head(phenotype_to_attach)
-
-# E_GEOD_28146 - change tissue to Hippocampus_CA1 and add AD to end of each form of AD
-
-table(phenotype_to_attach$Diagnosis)
-
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="normal",1]<-"Control"
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="incipient Alzheimer's disease",1]<-"Incipient_AD"
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="moderate Alzheimer's disease",1]<-"Moderate_AD"
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="severe Alzheimer's disease",1]<-"Severe_AD"
-
-# merge pheno and expression dataset together  - by row name 
-
-head(phenotype_to_attach)
-
-phenotype_to_attach$Diagnosis_sub_cat<-phenotype_to_attach$Diagnosis
-table(phenotype_to_attach$Diagnosis)
-
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="Moderate_AD" |
-                      phenotype_to_attach$Diagnosis=="Severe_AD",1]<-"AD"
-
-phenotype_to_attach[phenotype_to_attach$Diagnosis=="Incipient_AD",1]<-"MCI"
-
-#MMSE
-phenotype_to_attach[phenotype_to_attach$Diagnosis_sub_cat=="Incipient_AD",3]<-"20-26"
-phenotype_to_attach[phenotype_to_attach$Diagnosis_sub_cat=="Severe_AD",3]<-"<14"
-phenotype_to_attach[phenotype_to_attach$Diagnosis_sub_cat=="Moderate_AD",3]<-"14-19"
-
-head(phenotype_to_attach)
-
-# should be 9 colnames - Diagnosis", "Tissue", "Age", "Clinical_Gender", "Predicted_Gender", "MMSE", "BRAAK", "APOE", "Diagnosis_sub_cat"
-colnames(phenotype_to_attach)
-
-# order pheno information
-
-phenotype_to_attach<-phenotype_to_attach[,order(names(phenotype_to_attach), decreasing = T)]
-
-# add 
+# attach pheno to exprs table
 
 expression_data_QCd_entrez_id_unique_pheno<-merge(phenotype_to_attach, expression_data_QCd_entrez_id_unique, by="row.names")
-
-head(expression_data_QCd_entrez_id_unique_pheno)[1:5]
 
 rownames(expression_data_QCd_entrez_id_unique_pheno)<-expression_data_QCd_entrez_id_unique_pheno$Row.names
 
@@ -866,24 +900,38 @@ expression_data_QCd_entrez_id_unique_pheno$Row.names<-NULL
 
 head(expression_data_QCd_entrez_id_unique_pheno)[1:10]
 
-table(expression_data_QCd_entrez_id_unique_pheno$Diagnosis)
+# rows should be same in exprs table - should be TRUE
+
+dim(expression_data_QCd_entrez_id_unique)[1]==dim(expression_data_QCd_entrez_id_unique_pheno)[1]
+
+#### SUMMARY #####
+
+print(c("dataset:", dataset), quote=F)
+print(c("Disease:", disease), quote=F)
+print(c("Microarray Platform:", Microarray_platform), quote=F)
+print(c("Expression Chip:", expression_chip), quote=F)
+print(c("Data Format:", Data_format), quote=F)
+print(c("Tissue:", unique(Tissue)$Tissue), quote=F)
+print(c("Case Number:", length(case_ID)), quote=F)
+print(c("Control Number:", length(control_ID)), quote=F)
+print(c("Probe Detection Threshold:", Probe_Detection_Threshold), quote=F)
+print(c("Number of SV:", number_of_SV), quote=F)
+print(c("Gender-Missmatch:", dim(Gender_Missmatch)[1]), quote=F)
+print(c("Samples Removed:", dim(expression_data_normalised_as_data_frame)[2]-dim(expression_data_QCd_entrez_id_unique_pheno)[1]), quote=F)
+print(c("Final Case numbers:", length(expression_data_QCd_entrez_id_unique_pheno[expression_data_QCd_entrez_id_unique_pheno$Diagnosis=="case",1])), quote=F)
+print(c("Final Control Numbers:", length(expression_data_QCd_entrez_id_unique_pheno[expression_data_QCd_entrez_id_unique_pheno$Diagnosis=="control",1])), quote=F)
+print(c("Initial Probe Numbers:", dim(expression_data_normalised_as_data_frame)[1]), quote=F)
+print(c("Final Probe Numbers:", dim(expression_data_QCd_entrez_id_unique_pheno)[2]), quote=F)
 
 ##### SAVE EXPRESSION DATAFRAME #####
 
 setwd(clean_data_dir)
 
-write.table(expression_data_QCd_entrez_id_unique_pheno, file="E-GEOD-1297_pre-processed_data2.txt", sep="\t")
-
-##### SAVE PHENOTYPE DATAFRAME #####
-
-setwd(clean_data_dir)
-
-write.table(phenotype_data, file="E-GEOD-1297_phenotype_data2.txt", sep="\t")
+write.table(expression_data_QCd_entrez_id_unique_pheno, file=paste(dataset, "processing_data.txt", sep="_"), sep="\t")
 
 ##### SAVE IMAGE #####
 
 setwd(work_dir)
 
 save.image(file=paste(dataset, "processing_data.Rdata", sep="_"))
-
 
