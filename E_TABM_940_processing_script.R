@@ -252,6 +252,9 @@ eset.select.out <- massi_select(expression_data_normalised_as_data_frame, y_chro
 massi_y_plot(eset.select.out)
 massi_cluster_plot(eset.select.out)
 
+# check sex bias - should have at least 15% male samples and minimum 6 samples
+dip.result <- massi_dip(eset.select.out)
+
 # run gender predict
 eset.results <- massi_cluster(eset.select.out)
 
@@ -562,9 +565,9 @@ check_SV_in_data<-function(dataset){
 
 number_of_SV<-check_SV_in_data(data_exprs_good_probes_diagnosis)
 
-# creat function to sva adjust
+# create function to sva adjust
 
-# create function to adjust for SVA and adjust if needed
+# create function to adjust for SVA and adjust if needed - exclude gender as creating massive mbatch effect
 
 if (number_of_SV>0){
   adjust_for_sva<-function(dataset){
@@ -574,7 +577,7 @@ if (number_of_SV>0){
     dataset_sva_pheno<-sorted_by_diagnosis[c(1,2)]
     dataset_sva_exprs<-t(sorted_by_diagnosis[3:dim(sorted_by_diagnosis)[2]])
     #full model matrix for Diagnosis
-    mod = model.matrix(~Diagnosis+Clinical_Gender, data=dataset_sva_pheno)
+    mod = model.matrix(~Diagnosis, data=dataset_sva_pheno)
     mod0 = model.matrix(~1, data=dataset_sva_pheno)
     # number of SV
     num.sv(dataset_sva_exprs, mod, method="leek")
@@ -744,7 +747,7 @@ run_sample_network_plot<-function(dataset, threshold){
 # run sample network on entorhinal Cortex - on dataframe without gender
 
 data_case_exprs_good_probes_QC<-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_case, sample_network_ZK_threshold)
-data_control_exprs_good_probes_QC<-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, sample_network_ZK_threshold)
+data_control_exprs_good_probes_QC<-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, -2)
 
 ##### PLOT SAMPLE NETWORK ANALYSIS TO PDF #####
 
@@ -755,7 +758,7 @@ run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_case, sample_networ
 dev.off()
 
 pdf("control_sample_network_analysis.pdf")
-run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, sample_network_ZK_threshold)
+run_sample_network_plot(data_exprs_good_probes_diagnosis_sva_control, -2)
 dev.off()
 
 ##### CREATE QC'd DATASET #####
